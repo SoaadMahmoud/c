@@ -1,0 +1,139 @@
+---
+- name: This sets up an httpd webserver
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: no
+
+  vars:
+    apache_vhosts_enabled:
+#     - {servername: "www.soad.37.25.186.151.xip.io", documentrootdir: "www.soad", errorlog: "www.soad",customlog: "www.soad"} 
+#     - {servername: "www.test.37.25.186.151.xip.io",documentrootdir: "test.web",errorlog: "test.web",customlog: "test.web"}
+#      - servername: "www.soad.37.25.186.151.xip.io"
+#        documentrootdir: "www.soad"
+#        errorlog: "www.soad"
+#        customlog: "www.soad"
+       servername: 
+         - www.test.37.25.186.151.xip.io
+       documentrootdir: 
+         - test.web
+       errorlog:
+         -  test.web
+       customlog:
+         -  test.web
+   # apache_vhosts_disabled:
+   #   - servername: "vhost3.example.com"
+   #     serveradmin: "admin@example.com"
+   #     documentrootdir: "vhost3.example.com"
+   #     errorlog: "vhost3.example.com"
+   #     customlog: "vhost3.example.com"
+
+  tasks:
+  - name: Install Apache
+    yum:
+      pkg={{ item }}
+      state=present
+    with_items:
+      - httpd
+
+  - name: Ensure httpd is running
+    service:
+      name=httpd
+      state=started
+
+  - name: Ensure httpd is enabled
+    service:
+      name=httpd
+      enabled=yes
+
+  - name: Create sites-available directory
+    file:
+      path=/etc/httpd/sites-enabled
+      state=directory
+      owner=root
+      group=root
+      mode=0766
+      
+  - name: Create sites-available directory
+    file:
+      path=/etc/httpd/sites-available
+      state=directory
+      owner=root
+      group=root
+      mode=0766
+   
+      # Set symlinks to nginx sites-available directory
+  - name: Get a list of all vhosts
+    find:
+      paths: /etc/httpd/sites-available
+      patterns: "*.conf"
+      file_type: file
+    register: find
+
+  - name: Apply symlinks in sites-enabled
+    file:
+      dest: /etc/httpd/sites-enabled/{{ item.path | basename }}
+      src: "{{ item.path }}"
+      state: link
+      force: yes
+    with_items: "{{ find.files }}"
+      
+
+  - name: Add sites.d Include to httpd.conf
+    lineinfile:
+      dest=/etc/httpd/conf/httpd.conf
+      state=present
+      line='IncludeOptional sites-enabled/*.conf'
+    notify:
+      - restart httpd
+
+  - name: Create a VirtualHost file for each enabled VirtualHost
+    template:
+      src: templates/apache_vhost.conf.j2
+      dest: /etc/httpd/sites-available/www.test.conf
+      owner: root
+      group: root
+      mode: 0666
+    with_items: apache_vhosts_enabled
+    notify:
+      - restart httpd
+
+  - name: Create web directories for each enabled VirtualHost
+    file:
+      path: /var/www/www.test/public_html
+      state: directory
+      owner: apache
+      group: apache
+      mode: 0755
+    with_items: apache_vhosts_enabled
+
+  #- name: Remove VirtualHost file for each disabled VirtualHost
+  #  file:
+  #    path=/etc/httpd/conf.d/sites.d/{{ item.documentrootdir }}.conf
+  #    state=absent
+  #  with_items: apache_vhosts_disabled
+  #  notify:
+  #    - restart httpd
+
+ # - name: Remove web directories for each disabled VirtualHost
+ #   file:
+  #    path=/var/www/html/{{ item.documentrootdir }}
+  #    state=absent
+  #  with_items: apache_vhosts_disabled
+  
+  - name: Copy index file with owner and permission,
+    copy:
+     src: www.test.html
+     dest: /var/www/www.test/public_html/
+     owner: root
+     group: root
+     mode: u=rw,g=r,o=r
+    with_items: apache_vhosts_enabled
+  
+    
+
+
+  handlers:
+  - name: restart httpd
+    service:
+      name=httpd
+      state=restarted

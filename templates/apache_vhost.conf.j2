@@ -1,0 +1,19 @@
+NameVirtualHost *:80
+
+<VirtualHost *:80>
+    ServerName {{ apache_vhosts_enabled.servername }}
+    ServerAlias {{ apache_vhosts_enabled.serveralias }}
+    DocumentRoot /var/www/{{ domainname }}/public_html
+    ErrorLog /var/www/{{ domainname }}/error.log
+    CustomLog /var/www/{{ domainname }}/requests.log combined
+    <Directory /var/www/{{ domainname }}/public_html>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+   </Directory>
+
+
+
+
+
+</VirtualHost>

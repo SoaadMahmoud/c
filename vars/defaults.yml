@@ -1,0 +1,12 @@
+--- 
+apache_vhosts_enabled:
+ 
+       servername: www.go.37.25.186.151.xip.io
+       serveralias: go.37.25.186.151.xip.io
+       documentrootdir: go
+       errorlog: go
+       customlog: go
+#     - servername: www.test3.37.25.186.151.xip.io
+#   - { servername: www.soad2.37.25.186.151.xip.io, documentrootdir: www.soad2, errorlog: www.soad2,customlog: www.soad2 }
+#   - { servername: www.test3.37.25.186.151.xip.io, documentrootdir: www.test3, errorlog: www.test3, customlog: wwww.test3 }
+domainname: go
